@@ -2,6 +2,11 @@
   margin-bottom: 20px;
 }
 
+.recherche-container {
+  display: flex;
+  gap: 10px;
+}
+
 .recherche-input {
   width: 100%;
   padding: 12px 16px;
@@ -19,4 +24,18 @@
 
 .recherche-input::placeholder {
   color: #b2bec3;
+}
+
+.btn-effacer {
+  padding: 12px 16px;
+  border: none;
+  background-color: #e74c3c;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.btn-effacer:hover {
+  opacity: 0.9;
 }

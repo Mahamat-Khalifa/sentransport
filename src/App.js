@@ -9,6 +9,7 @@ import Footer from './Footer';
 function App() {
   const [recherche, setRecherche] = useState("");
   const [ligneSelectionnee, setLigneSelectionnee] = useState(null);
+  const [nombreRecherches, setNombreRecherches] = useState(0);
 
   const lignes = [
     {
@@ -121,12 +122,25 @@ function App() {
     }
   }
 
+  function handleRecherche(value) {
+    setRecherche(value);
+    setNombreRecherches(nombreRecherches + 1);
+  }
+
   return (
     <div className="App">
       <Header />
 
       <main className="contenu">
-        <Recherche valeur={recherche} onChange={setRecherche} />
+        <Recherche
+          valeur={recherche}
+          onChange={handleRecherche}
+        />
+
+        <p className="compteur-recherche">
+          Vous avez effectue {nombreRecherches} recherche
+          {nombreRecherches > 1 ? 's' : ''}
+        </p>
 
         <p className="resultat-recherche">
           {lignesFiltrees.length} ligne
@@ -134,20 +148,26 @@ function App() {
           {lignesFiltrees.length > 1 ? 's' : ''}
         </p>
 
-        {lignesFiltrees.map(ligne => (
-          <LigneBus
-            key={ligne.id}
-            numero={ligne.numero}
-            depart={ligne.depart}
-            arrivee={ligne.arrivee}
-            arrets={ligne.arrets}
-            estSelectionnee={
-              ligneSelectionnee &&
-              ligneSelectionnee.id === ligne.id
-            }
-            onClick={() => handleClickLigne(ligne)}
-          />
-        ))}
+        {lignesFiltrees.length === 0 ? (
+          <p className="aucun-resultat">
+            Aucune ligne trouvée
+          </p>
+        ) : (
+          lignesFiltrees.map(ligne => (
+            <LigneBus
+              key={ligne.id}
+              numero={ligne.numero}
+              depart={ligne.depart}
+              arrivee={ligne.arrivee}
+              arrets={ligne.arrets}
+              estSelectionnee={
+                ligneSelectionnee &&
+                ligneSelectionnee.id === ligne.id
+              }
+              onClick={() => handleClickLigne(ligne)}
+            />
+          ))
+        )}
 
         {ligneSelectionnee && (
           <DetailLigne ligne={ligneSelectionnee} />
