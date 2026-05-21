@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 import Header from './Header';
 import Recherche from './Recherche';
@@ -7,106 +7,40 @@ import DetailLigne from './DetailLigne';
 import Footer from './Footer';
 
 function App() {
+  const [lignes, setLignes] = useState([]);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState(null);
   const [recherche, setRecherche] = useState("");
   const [ligneSelectionnee, setLigneSelectionnee] = useState(null);
-  const [nombreRecherches, setNombreRecherches] = useState(0);
+  const [detailLigne, setDetailLigne] = useState(null);
+  const [chargementDetail, setChargementDetail] = useState(false);
 
-  const lignes = [
-    {
-      id: 1,
-      numero: "1",
-      depart: "Parcelles Assainies",
-      arrivee: "Plateau",
-      arrets: 14,
-      listeArrets: [
-        "Parcelles U14",
-        "Parcelles U10",
-        "Camberene",
-        "Patte d'Oie",
-        "Grand Dakar",
-        "Colobane",
-        "Ponty",
-        "Plateau"
-      ]
-    },
-    {
-      id: 2,
-      numero: "7",
-      depart: "Guediawaye",
-      arrivee: "Place Obe",
-      arrets: 18,
-      listeArrets: [
-        "Guediawaye",
-        "Pikine",
-        "Thiaroye",
-        "Keur Massar",
-        "Grand Yoff",
-        "Parcelles",
-        "Liberte 6",
-        "Place Obe"
-      ]
-    },
-    {
-      id: 3,
-      numero: "15",
-      depart: "Pikine",
-      arrivee: "Medina",
-      arrets: 12,
-      listeArrets: [
-        "Pikine Centre",
-        "Thiaroye Gare",
-        "Hann",
-        "Colobane",
-        "Fass",
-        "Medina"
-      ]
-    },
-    {
-      id: 4,
-      numero: "23",
-      depart: "Ouakam",
-      arrivee: "Grand Dakar",
-      arrets: 10,
-      listeArrets: [
-        "Ouakam Village",
-        "Mermoz",
-        "Fann",
-        "Point E",
-        "Liberte 5",
-        "Grand Dakar"
-      ]
-    },
-    {
-      id: 5,
-      numero: "8",
-      depart: "Almadies",
-      arrivee: "Colobane",
-      arrets: 16,
-      listeArrets: [
-        "Almadies",
-        "Ngor",
-        "Yoff",
-        "Ouest Foire",
-        "Liberte 6",
-        "Colobane"
-      ]
-    },
-    {
-      id: 6,
-      numero: "12",
-      depart: "Yoff",
-      arrivee: "Sandaga",
-      arrets: 11,
-      listeArrets: [
-        "Yoff Village",
-        "Aeroport LSS",
-        "Parcelles U17",
-        "Grand Yoff",
-        "HLM",
-        "Sandaga"
-      ]
-    }
-  ];
+  // Exercice 1 : fonction extraite pour pouvoir la réappeler
+  function chargerLignes() {
+    setChargement(true);
+    setErreur(null);
+
+    fetch("http://localhost:5000/lignes")
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Erreur serveur : " + response.status);
+        }
+        return response.json();
+      })
+      .then(data => {
+        setLignes(data);
+        setChargement(false);
+      })
+      .catch(error => {
+        setErreur(error.message);
+        setChargement(false);
+      });
+  }
+
+  // Chargement au démarrage
+  useEffect(() => {
+    chargerLignes();
+  }, []);
 
   const lignesFiltrees = lignes.filter(l =>
     l.depart.toLowerCase().includes(recherche.toLowerCase()) ||
@@ -114,66 +48,101 @@ function App() {
     l.numero.includes(recherche)
   );
 
+  // Exercice 3 : fetch du détail au clic
   function handleClickLigne(ligne) {
     if (ligneSelectionnee && ligneSelectionnee.id === ligne.id) {
       setLigneSelectionnee(null);
-    } else {
-      setLigneSelectionnee(ligne);
+      setDetailLigne(null);
+      return;
     }
+
+    setLigneSelectionnee(ligne);
+    setChargementDetail(true);
+    setDetailLigne(null);
+
+    fetch(`http://localhost:5000/lignes/${ligne.id}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Détail introuvable : " + response.status);
+        }
+        return response.json();
+      })
+      .then(data => {
+        setDetailLigne(data);
+        setChargementDetail(false);
+      })
+      .catch(error => {
+        console.error("Erreur chargement détail :", error.message);
+        setChargementDetail(false);
+      });
   }
 
-  function handleRecherche(value) {
-    setRecherche(value);
-    setNombreRecherches(nombreRecherches + 1);
+  // Écran de chargement
+  if (chargement) {
+    return (
+      <div className="App">
+        <Header />
+        <main className="contenu">
+          <p className="message-chargement">Chargement des lignes...</p>
+        </main>
+      </div>
+    );
   }
 
+  // Écran d'erreur
+  if (erreur) {
+    return (
+      <div className="App">
+        <Header />
+        <main className="contenu">
+          <div className="message-erreur">
+            <p>Impossible de charger les lignes.</p>
+            <p className="erreur-detail">{erreur}</p>
+            <p>Vérifiez que le serveur Flask est lancé (python api/app.py).</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Écran normal
   return (
     <div className="App">
       <Header />
-
       <main className="contenu">
-        <Recherche
-          valeur={recherche}
-          onChange={handleRecherche}
-        />
+        <Recherche valeur={recherche} onChange={setRecherche} />
 
-        <p className="compteur-recherche">
-          Vous avez effectue {nombreRecherches} recherche
-          {nombreRecherches > 1 ? 's' : ''}
-        </p>
+        {/* Exercice 1 : bouton recharger */}
+        <button className="btn-recharger" onClick={chargerLignes}>
+          🔄 Recharger
+        </button>
 
         <p className="resultat-recherche">
-          {lignesFiltrees.length} ligne
-          {lignesFiltrees.length > 1 ? 's' : ''} trouvee
-          {lignesFiltrees.length > 1 ? 's' : ''}
+          {lignesFiltrees.length} ligne{lignesFiltrees.length > 1 ? 's' : ''}{' '}
+          trouvée{lignesFiltrees.length > 1 ? 's' : ''}
         </p>
 
-        {lignesFiltrees.length === 0 ? (
-          <p className="aucun-resultat">
-            Aucune ligne trouvée
-          </p>
-        ) : (
-          lignesFiltrees.map(ligne => (
-            <LigneBus
-              key={ligne.id}
-              numero={ligne.numero}
-              depart={ligne.depart}
-              arrivee={ligne.arrivee}
-              arrets={ligne.arrets}
-              estSelectionnee={
-                ligneSelectionnee &&
-                ligneSelectionnee.id === ligne.id
-              }
-              onClick={() => handleClickLigne(ligne)}
-            />
-          ))
+        {lignesFiltrees.map(ligne => (
+          <LigneBus
+            key={ligne.id}
+            numero={ligne.numero}
+            depart={ligne.depart}
+            arrivee={ligne.arrivee}
+            arrets={ligne.arrets}
+            estSelectionnee={ligneSelectionnee && ligneSelectionnee.id === ligne.id}
+            onClick={() => handleClickLigne(ligne)}
+          />
+        ))}
+
+        {/* Exercice 3 : détail chargé depuis l'API */}
+        {chargementDetail && (
+          <p className="message-chargement">Chargement du détail...</p>
+        )}
+        {detailLigne && !chargementDetail && (
+          <DetailLigne ligne={detailLigne} />
         )}
 
-        {ligneSelectionnee && (
-          <DetailLigne ligne={ligneSelectionnee} />
-        )}
       </main>
-
       <Footer />
     </div>
   );
