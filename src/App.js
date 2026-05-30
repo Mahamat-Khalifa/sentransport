@@ -5,6 +5,7 @@ import Recherche from './Recherche';
 import LigneBus from './LigneBus';
 import DetailLigne from './DetailLigne';
 import Footer from './Footer';
+import Carte from './Carte';
 
 function App() {
   const [lignes, setLignes] = useState([]);
@@ -15,16 +16,12 @@ function App() {
   const [detailLigne, setDetailLigne] = useState(null);
   const [chargementDetail, setChargementDetail] = useState(false);
 
-  // Exercice 1 : fonction extraite pour pouvoir la réappeler
   function chargerLignes() {
     setChargement(true);
     setErreur(null);
-
     fetch("http://localhost:5000/lignes")
       .then(response => {
-        if (!response.ok) {
-          throw new Error("Erreur serveur : " + response.status);
-        }
+        if (!response.ok) throw new Error("Erreur serveur : " + response.status);
         return response.json();
       })
       .then(data => {
@@ -37,7 +34,6 @@ function App() {
       });
   }
 
-  // Chargement au démarrage
   useEffect(() => {
     chargerLignes();
   }, []);
@@ -48,23 +44,18 @@ function App() {
     l.numero.includes(recherche)
   );
 
-  // Exercice 3 : fetch du détail au clic
   function handleClickLigne(ligne) {
     if (ligneSelectionnee && ligneSelectionnee.id === ligne.id) {
       setLigneSelectionnee(null);
       setDetailLigne(null);
       return;
     }
-
     setLigneSelectionnee(ligne);
     setChargementDetail(true);
     setDetailLigne(null);
-
     fetch(`http://localhost:5000/lignes/${ligne.id}`)
       .then(response => {
-        if (!response.ok) {
-          throw new Error("Détail introuvable : " + response.status);
-        }
+        if (!response.ok) throw new Error("Détail introuvable : " + response.status);
         return response.json();
       })
       .then(data => {
@@ -77,7 +68,6 @@ function App() {
       });
   }
 
-  // Écran de chargement
   if (chargement) {
     return (
       <div className="App">
@@ -89,7 +79,6 @@ function App() {
     );
   }
 
-  // Écran d'erreur
   if (erreur) {
     return (
       <div className="App">
@@ -105,14 +94,12 @@ function App() {
     );
   }
 
-  // Écran normal
   return (
     <div className="App">
       <Header />
       <main className="contenu">
         <Recherche valeur={recherche} onChange={setRecherche} />
 
-        {/* Exercice 1 : bouton recharger */}
         <button className="btn-recharger" onClick={chargerLignes}>
           🔄 Recharger
         </button>
@@ -134,13 +121,14 @@ function App() {
           />
         ))}
 
-        {/* Exercice 3 : détail chargé depuis l'API */}
         {chargementDetail && (
           <p className="message-chargement">Chargement du détail...</p>
         )}
         {detailLigne && !chargementDetail && (
           <DetailLigne ligne={detailLigne} />
         )}
+
+        <Carte />
 
       </main>
       <Footer />
